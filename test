@@ -1,0 +1,4 @@
+#!/bin/bash
+
+rm -rf __init__.py
+pytest -v

@@ -23,5 +23,5 @@ pip install --upgrade pytest
 Rendre un code commenté et le programme doit pouvoir passer tous les tests sous python 3.12
 
 ## condition de remise
-nom de fichier : <matricule>.py
+nom de fichier : matricule.py
 à rendre avant le 14 mars avant 22h
