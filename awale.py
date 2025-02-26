@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
 Nom: Li
 Prénom: Min-Tchun
@@ -15,9 +16,10 @@ def play(board, player: int, cell: int) -> int:
   tmpPlayer = player
   seeds = board[player][cell]
 
+  board[player][cell] -= board[player][cell]
   while count < seeds:
     if tmpCell >= 5:
-      tmpPlayer = abs(player - 1)
+      tmpPlayer = abs(tmpPlayer - 1)
       #si player = 0 => abs(0 - 1) = 1
       #si player = 1 => abs(1 - 1) = 0
       tmpCell = -1 # car après, incrémantation de tmpCell
@@ -25,9 +27,9 @@ def play(board, player: int, cell: int) -> int:
     board[tmpPlayer][tmpCell] += 1
     count += 1
 
-  board[player][cell] -= board[player][cell]
+
   leftSeeds = 0
-  while tmpPlayer != player and board[tmpPlayer][tmpCell] in [2, 3]:
+  while tmpPlayer != player and board[tmpPlayer][tmpCell] in [2, 3] and tmpCell >= 0:
     leftSeeds += board[tmpPlayer][tmpCell]
     board[tmpPlayer][tmpCell] -= board[tmpPlayer][tmpCell]
     tmpCell -= 1
@@ -36,10 +38,18 @@ def play(board, player: int, cell: int) -> int:
 
 
 def is_end(board, player: int) -> bool:
+  for i in board[player]:
+    if i != 0:
+      return False
   return True
 
+def enum(board, player: int, depth: int) -> list[tuple[list[int], int]]:
+  pass
 
-BOARD1 = [ [1,7,2,7,2,0],
-           [0,3,4,2,2,5] ]
+def suggest(board, player: int, depth: int) -> int:
+  pass
 
-print(play(BOARD1, 0, 3))
+
+BOARD4 = [ [0,1,2,0,4,0],
+           [0,0,0,0,0,0] ]
+print(is_end(BOARD4, 1))
