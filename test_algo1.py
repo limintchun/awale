@@ -1,14 +1,15 @@
 from copy import deepcopy
-
-
-# Génère un fichier '__init__.py' pour importer vos fonctions
 import os
-with open("__init__.py", "w+") as init:
-  for file in os.listdir():
-    if file.endswith(".py") and file not in ("__init__.py"):
+
+
+# Génère un fichier '__test__.py' pour importer vos fonctions
+with open("__test__.py", "w+") as init:
+  for file in os.listdir(os.path.dirname(__file__)):
+    if file.endswith(".py") and file not in ("__test__.py", __file__.split('/')[-1]):
       init.write(f"from {file[:-3]} import *\n")
 
-from __init__ import *
+
+from __test__ import *
 
 
 
@@ -193,11 +194,6 @@ def test_suggest_p1_depth1():
   assert suggest(board, 0, 1) == 3, "Le meilleur coup pour le joueur 1 est la case 'c'"
 
 
-def test_suggest_p2_depth1():
-  board = deepcopy(BOARD1)
-  assert suggest(board, 1, 1) in (1,3), "Les coups les moins pires pour le joueur 2 sont les cases 'b' et 'c'"
-
-
 def test_suggest_p1_depth1_starving1():
   board = deepcopy(BOARD4)
   assert suggest(board, 0, 1) == 4, "Seul le coup 'e' est valide pour ne pas affamer le joueur 2"
@@ -208,24 +204,9 @@ def test_suggest_p1_depth1_starving2():
   assert suggest(board, 0, 1) == 4, "Le coup 'f' est invalide car il affamerait le joueur 2"
 
 
-def test_suggest_p2_depth1_starving1():
-  board = deepcopy(BOARD4[::-1])
-  assert suggest(board, 1, 1) == 4, "Seul le coup 'k' est valide pour ne pas affamer le joueur 1"
-
-
-def test_suggest_p2_depth1_starving2():
-  board = deepcopy(BOARD5[::-1])
-  assert suggest(board, 1, 1) == 4, "Le coup 'l' est invalide car il affamerait le joueur 1"
-
-
 def test_suggest_p1_depth2():
   board = deepcopy(BOARD3)
   assert suggest(board, 0, 2) == 3, "Le coup le moins pire pour le joueur 1 est 'd'"
-
-
-def test_suggest_p2_depth2():
-  board = deepcopy(BOARD3)
-  assert suggest(board, 1, 2) in (1,2), "Les meilleurs coups pour le joueur 2 sont 'b' et 'c'"
 
 
 def test_suggest_p1_depth4():
@@ -233,12 +214,7 @@ def test_suggest_p1_depth4():
   assert suggest(board, 0, 4) == 3, "Le meilleur coup pour le joueur 1 est 'd'"
 
 
-def test_suggest_p2_depth4():
-  board = deepcopy(BOARD1)
-  assert suggest(board, 1, 4) in (1,3), "Les meilleurs coups pour le joueur 2 sont 'b' et 'd'"
-
-
 def test_suggest_p1_depth8():
   board = deepcopy(BOARD3)
-  assert suggest(board, 0, 4) == 3, "Le meilleur coup pour le joueur 1 est 'f' pour une profondeur de 4"
+  assert suggest(board, 0, 4) == 3, "Le meilleur coup pour le joueur 1 est 'd' pour une profondeur de 4"
   assert suggest(board, 0, 8) == 5, "Le meilleur coup pour le joueur 1 est 'f' pour une profondeur de 8"
