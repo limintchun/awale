@@ -113,6 +113,8 @@ def valid_move(board, player, cell) -> bool:
 
 def suggest(board, player: int, depth: int) -> int:
 
+    if depth <= 0:
+        return -1
     # simple déclaration de la variable best_move
     best_move = -1
 
@@ -125,10 +127,14 @@ def suggest(board, player: int, depth: int) -> int:
                 new_board = [row.copy() for row in board]
                 score = play(new_board, player, cell)
 
-                if depth <= 1 or is_end(new_board, 1 - player):
+                # if depth <= 1 or is_end(new_board, 1 - player):
+                #     current_score = score
+                if is_end(new_board, 1 - player):
                     current_score = score
                 else:
+                    next_score = min_max(new_board, abs(player - 1), depth - 1, float('-inf'), float('inf'))
                     current_score = score + min_max(new_board, abs(player - 1), depth - 1, float('-inf'), float('inf'))
+
                 if current_score > best_score:
                     best_score = current_score
                     best_move = cell
@@ -141,10 +147,13 @@ def suggest(board, player: int, depth: int) -> int:
                 new_board = [row.copy() for row in board]
                 score = play(new_board, player, cell)
 
-                if depth <= 1 or is_end(new_board, 1 - player):
+                # if depth <= 1 or is_end(new_board, 1 - player):
+                #     current_score = -score
+                if is_end(new_board, abs(player - 1)):
                     current_score = -score
                 else:
-                    current_score = -score + min_max(new_board, abs(player - 1), depth - 1, float('-inf'), float('inf'))
+                    new_score = min_max(new_board, abs(player - 1), depth - 1, float('-inf'), float('inf'))
+                    current_score = -score + new_score
 
                 if current_score < best_score:
                     best_score = current_score
@@ -187,6 +196,7 @@ def min_max(board, player: int, depth: int, alpha : int, beta :int) -> int:
                 if is_end(new_board, abs(player - 1)):
                     current_score = score
                 else:
+                    opps_best = min
                     current_score = score + min_max(new_board, abs(player - 1), depth - 1, alpha, beta)
 
                 best_score = max(best_score, current_score)
@@ -205,7 +215,8 @@ def min_max(board, player: int, depth: int, alpha : int, beta :int) -> int:
                 if is_end(new_board, abs(player - 1)):
                     current_score = -score
                 else:
-                    current_score = min_max(new_board, abs(player - 1), depth - 1, alpha, beta)
+                    opps_best = min_max(new_board, abs(player - 1), depth - 1, alpha, beta)
+                    current_score = -score + opps_best
 
                 best_score = min(best_score, current_score)
                 beta = min(beta, best_score)
