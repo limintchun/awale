@@ -2,23 +2,27 @@
 """
 Nom: Li
 Prénom: Min-Tchun
-But du programme: Réaliser une mini-IA en Python capable de dtéerminer quel coup jouer au mancal à l'aide du backtracking
+But du programmme: Réaliser une mini-IA en Python3 capable de déterminer quel coup jouer au "mancal" à l'aide du backtracking
+
+Documentation utilisée: 
+    https://medium.com/@mol02office/ai-implementation-for-owar%C3%A9-awal%C3%A9-part-1-80c4e679e01c
+    https://medium.com/@mol02office/ai-implementation-for-owar%C3%A9-part-2-187b00ccbf09
 """
 
 def play(board, player: int, cell: int) -> int:
     """
     Joue un coup sur le plateau de jeu
-    @param board: list[list[int]]: le plateau de jeu
-    @param player: int: le joueur qui joue
-    @param cell: int: la cellule de départ
-    @return: int: le nombre de graines restant après le coup
+    Prend en paramètre un plateau de jeu, le joueur, la cellule de départ.
+    Retourne le nombre de graines capturées après le coup.
     """
 
+    # Initialisation des variables nécessaires au calcul du score de player
     count = 0
     tmpCell = cell
     tmpPlayer = player
     seeds = board[player][cell]
 
+    # Vider la cellule de départ
     board[player][cell] -= board[player][cell]
     while count < seeds:
         if tmpCell >= 5:
@@ -38,14 +42,54 @@ def play(board, player: int, cell: int) -> int:
 
     return leftSeeds
 
+def will_starve_opponent(board, player: int, cell: int) -> bool:
+    """
+    Vérifie si un coup va affamer l'adversaire.
+    Prend en paramètre un plateau de jeu, le joueur et une case.
+    Retourne un booléen, True si le coup va affamer l'adversaire, sinon False.
+    """
+
+    # Une cellule vide ne peut pas être jouée
+    if board[player][cell] == 0:
+        return False
+    
+    # Copie le plateau pour ensuite simuler le coup
+    temp_board = [row[:] for row in board]
+    play(temp_board, player, cell)
+    
+    opponent = abs(player -1)
+    return sum(temp_board[opponent]) == 0
+
+def get_valid_moves(board, player: int) -> list:
+    """
+    Reçoit tous les coups valides pour un joueur.
+    Prend en paramètre un plateau de jeu et un joueur.
+    Retourne une liste des indices de cellules valides.
+    """
+    valid_moves = []
+    has_non_starving_moves = False
+    
+    # Vérifie si le coup va affamer l'adversaire
+    for cell in range(6):
+        if board[player][cell] > 0:
+            if not will_starve_opponent(board, player, cell):
+                has_non_starving_moves = True
+                valid_moves.append(cell)
+    
+    # Sinon retourne les coups valides
+    if has_non_starving_moves:
+        return valid_moves
+    
+    # Si tout les coups affament l'adversaire, retourne toutes les cellules non vides
+    return [cell for cell in range(6) if board[player][cell] > 0]
 
 def is_end(board, player: int) -> bool:
     """
-    Détermine si un joueur ne peut plus jouer
-    @param board: list[list[int]]: le plateau de jeu
-    @param player: int: le joueur qui joue
-    @return: bool: True si le joueur ne peut plus jouer, False sinon
+    Vérifie si le jeu est terminé.
+    Prend en paramètre un plateau de jeu et un joueur.
+    Retourne un booléen, True si le jeu est terminé, sinon False. 
     """
+
     for i in board[player]:
         if i != 0:
             return False
@@ -53,183 +97,130 @@ def is_end(board, player: int) -> bool:
 
 def enum(board, player: int, depth: int) -> list[tuple[list[int], int]]:
     """
-    Enumère les coups possibles pour un joueur
-    @param board: list[list[int]]: le plateau de jeu
-    @param player: int: le joueur qui joue
-    @param depth: int: la profondeur de recherche
+    Enumère toutes les séquences possibles de coups jusqu'à une profondeur donnée.
+    Prend un plateau de jeu, un joueur et la profondeur de recherche.
+    Retourne une liste de tuples tel que (séquence de coups, score final)
     """
-    # cas de base pour éviter une récursion infinie
+
+    # Cas de base pour éviter une récursion infinie
     if depth == 0 or is_end(board, player):
         return [([], 0)]
 
     # construction de la liste des résultats
     results = []
-    for cell in range(6):
-        if board[player][cell] > 0:
-            # évite d'affamer le joueur adverse
-            if valid_move(board, player, cell):
-                new_board = [row.copy() for row in board]
-                score = play(new_board, player, cell)
-                if player == 0:
-                    move_score = score
-                else:
-                    move_score = -score
+    valid_moves = get_valid_moves(board, player)
+    
+    for move in valid_moves:
+        # Copie le plateau de jeu
+        temp_board = [row[:] for row in board]
+        
+        # Simule le coup du joueur
+        collected = play(temp_board, player, move)
+        
+        # score négatif si c'est l'adversaire, sinon le score est positif
+        score_adjustment = collected if player == 0 else -collected
+        
+        # Appel récursif avec le prochain coup du joueur et d'une profondeur réduite
+        next_player = abs(player - 1)
+        next_sequences = enum(temp_board, next_player, depth - 1)
+        
+        # Ajoute les coup actuel avec ajustement du score
+        for seq, score in next_sequences:
+            results.append(([move] + seq, score + score_adjustment))
 
-                next_player = abs(player - 1)
-                sub_sequ = enum(new_board, next_player, depth - 1)
-
-                for sub_moves, sub_score in sub_sequ:
-                    moves = [cell] + sub_moves
-                    total_score = move_score + sub_score
-                    results.append((moves, total_score))
     return results
-
-def valid_move(board, player, cell) -> bool:
-    """
-    Détermine si un coup est valide
-    @param board: list[list[int]]: le plateau de jeu
-    @param player: int: le joueur qui joue
-    @param cell: int: la cellule de départ
-    """
-
-    if board[player][cell] == 0:
-        return False
-
-    temp_board = [row.copy() for row in board]
-    play(temp_board, player, cell)
-
-    opps = 1 - player
-    if sum(temp_board[opps]) == 0:
-        for other_cell in range(6):
-            if other_cell != cell and board[player][other_cell] > 0:
-                other_tmp_board = [row.copy() for row in temp_board]
-                play(other_tmp_board, player, other_cell)
-
-                if sum(other_tmp_board[opps]) > 0:
-                    return False
-        return True
-    return True
 
 
 def suggest(board, player: int, depth: int) -> int:
+    """
+    Suggère le meilleur coup pour un joueur en utilisant l'algorithme MinMax
+    Prend un plateau de jeu, un joueur et la profondeur de recherche.
+    Retourne la meilleure cellule à jouer
+    """
 
-    if depth <= 0:
+    valid_moves = get_valid_moves(board, player)
+    
+    if not valid_moves:
         return -1
-    # simple déclaration de la variable best_move
-    best_move = -1
-
-    if player == 0:
+    
+    best_move = valid_moves[0] # Début à partir du premier coup valide
+    
+    if player == 0:  # Joueur 1 (à maximiser)
         best_score = float('-inf')
 
-        for cell in range(6):
-            if board[player][cell] > 0 and valid_move(board, player, cell):
+        for move in valid_moves:
+            temp_board = [row[:] for row in board]
+            collected = play(temp_board, player, move)
+            
+            if depth == 1:
+                score = collected 
+            else:
+                next_player = abs(player - 1)
+                # Evalue les coups suivants
+                score = collected + minmax(temp_board, next_player, depth - 1, False)
+                
+            if score > best_score:
+                best_score = score
+                best_move = move
 
-                new_board = [row.copy() for row in board]
-                score = play(new_board, player, cell)
-
-                # if depth <= 1 or is_end(new_board, 1 - player):
-                #     current_score = score
-                if is_end(new_board, 1 - player):
-                    current_score = score
-                else:
-                    next_score = min_max(new_board, abs(player - 1), depth - 1, float('-inf'), float('inf'))
-                    current_score = score + min_max(new_board, abs(player - 1), depth - 1, float('-inf'), float('inf'))
-
-                if current_score > best_score:
-                    best_score = current_score
-                    best_move = cell
-    else:
+    else:  # Joueur 2 (à minmiser)
         best_score = float('inf')
-
-        for cell in range(6):
-            if board[player][cell] > 0 and valid_move(board, player, cell):
-
-                new_board = [row.copy() for row in board]
-                score = play(new_board, player, cell)
-
-                # if depth <= 1 or is_end(new_board, 1 - player):
-                #     current_score = -score
-                if is_end(new_board, abs(player - 1)):
-                    current_score = -score
-                else:
-                    new_score = min_max(new_board, abs(player - 1), depth - 1, float('-inf'), float('inf'))
-                    current_score = -score + new_score
-
-                if current_score < best_score:
-                    best_score = current_score
-                    best_move = cell
+        for move in valid_moves:
+            temp_board = [row[:] for row in board]
+            
+            collected = play(temp_board, player, move)
+            
+            if depth == 1:
+                score = -collected
+            else:
+                next_player = abs(player - 1)
+                # Evalue les coups suivants
+                score = -collected + minmax(temp_board, next_player, depth - 1, True)
+                
+            if score < best_score:
+                best_score = score
+                best_move = move
+                
     return best_move
 
 
-
-            # if is_end(new_board, abs(player - 1)):
-            #     score = final_score(new_board, score, player)
-            # else:
-            #     if player == 0:
-            #         player_score = score
-            #     else:
-            #         player_score = -score
-
-            #     next_score = min_max(new_board, abs(player - 1), depth - 1, player_score)
-            #     score = next_score
-
-            # if player == 0:
-            #     if score > best_score:
-            #         best_score = score
-            #         best_cell = cell
-            #     else:
-            #         if score < best_score:
-            #             best_score = score
-            #             best_cell = cell
-
-def min_max(board, player: int, depth: int, alpha : int, beta :int) -> int:
-    if depth <= 0 or is_end(board, player):
+def minmax(board, player: int, depth: int, maximizing: bool) -> int:
+    """
+    Algorithme MinMax pour évaluer les coups possibles.
+    Prend en paramètre un plateau de jeu, un joueur, la profondeur de recherche et une variable déterminant s'il faut maximiser le coup.
+    Retourne le meilleur score
+    """
+    # Cas de base: profondeur atteinte ou jeu terminé
+    if depth == 0 or is_end(board, player):
         return 0
-
-    if player == 0:
+    
+    valid_moves = get_valid_moves(board, player)
+    
+    if not valid_moves:  
+        return 0
+    
+    if maximizing:  # Tour du joueur 1 (à maximiser)
         best_score = float('-inf')
-        for cell in range(6):
-            if board[player][cell] > 0 and valid_move(board, player, cell):
-                new_board = [row.copy() for row in board]
-                score = play(new_board, player, cell)
-
-                if is_end(new_board, abs(player - 1)):
-                    current_score = score
-                else:
-                    opps_best = min
-                    current_score = score + min_max(new_board, abs(player - 1), depth - 1, alpha, beta)
-
-                best_score = max(best_score, current_score)
-                alpha = max(alpha, best_score)
-                if beta <= alpha:
-                    break
+        for move in valid_moves:
+            temp_board = [row[:] for row in board]
+            
+            collected = play(temp_board, player, move)
+            
+            next_player = abs(player - 1)
+            score = collected + minmax(temp_board, next_player, depth - 1, False)
+            
+            best_score = max(best_score, score)
         return best_score
-    else:
+    
+    else:  # Tour du joeur 2 (à minimiser)
         best_score = float('inf')
-
-        for cell in range(6):
-            if board[player][cell] > 0 and valid_move(board, player, cell):
-                new_board = [row.copy() for row in board]
-                score= play(new_board, player, cell)
-
-                if is_end(new_board, abs(player - 1)):
-                    current_score = -score
-                else:
-                    opps_best = min_max(new_board, abs(player - 1), depth - 1, alpha, beta)
-                    current_score = -score + opps_best
-
-                best_score = min(best_score, current_score)
-                beta = min(beta, best_score)
-                if beta <= alpha:
-                    break
+        for move in valid_moves:
+            temp_board = [row[:] for row in board]
+            
+            collected = play(temp_board, player, move)
+            
+            next_player = abs(player - 1)
+            score = -collected + minmax(temp_board, next_player, depth - 1, True)
+            
+            best_score = min(best_score, score)
         return best_score
-
-def final_score(board, score, player: int) -> int:
-    if player == 0:
-        return score
-    else:
-        return -score
-
-BOARD1 = [ [1,7,2,7,2,0],
-           [0,3,4,2,2,5] ]
-enum(BOARD1, 0, 1)
